@@ -15,7 +15,7 @@ import (
 	mathrand "math/rand"
 	"time"
 
-	"code.google.com/p/go.crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160"
 	secp256k1 "github.com/toxeus/go-secp256k1"
 )
 
@@ -282,12 +282,16 @@ func NewSignature(rawTransaction []byte, privateKey []byte) ([]byte, error) {
 	//Hash the raw transaction twice with SHA256 before the signing
 	shaHash := sha256.New()
 	shaHash.Write(rawTransaction)
-	var hash []byte = shaHash.Sum(nil)
+
+	var hash = shaHash.Sum(nil)
 	shaHash2 := sha256.New()
 	shaHash2.Write(hash)
-	rawTransactionHashed := shaHash2.Sum(nil)
+	rawTransactionHashed := convertToByte32Slice(shaHash2.Sum(nil))
+
+
 	//Sign the raw transaction
-	signedTransaction, success := secp256k1.Sign(rawTransactionHashed, privateKey32, newNonce())
+	nonce := newNonce()
+	signedTransaction, success := secp256k1.Sign(rawTransactionHashed, privateKey32, &nonce)
 	if !success {
 		return nil, errors.New("Failed to sign transaction")
 	}
@@ -299,4 +303,13 @@ func NewSignature(rawTransaction []byte, privateKey []byte) ([]byte, error) {
 	//Stop secp256k1 and return signature
 	secp256k1.Stop()
 	return signedTransaction, nil
+}
+
+func convertToByte32Slice(array []byte) [32]byte {
+	var result = [32]byte{}
+
+	for i := 0; i <= 31; i++ {
+		result[i] = array[i];
+	}
+	return result
 }
