@@ -17,6 +17,8 @@ var (
 	cmdKeysCount   = cmdKeys.Flag("count", "No. of key pairs to generate.").Default("1").Int()
 	cmdKeysConcise = cmdKeys.Flag("concise", "Turn on concise output. Default is off (verbose output).").Default("false").Bool()
 	cmdKeysTestNet = cmdKeys.Flag("testnet", "Test net compatibility").Default("false").Bool()
+	cmdKeysPrivateKey  = cmdKeys.Flag("private-key", "Private key as seed.").Default("").String()
+
 	//address subcommand
 	cmdAddress           = app.Command("address", "Generate a multisig P2SH address with M-of-N requirements and set of public keys.")
 	cmdAddressM          = cmdAddress.Flag("m", "M, the minimum number of keys needed to spend Bitcoin in M-of-N multisig transaction.").Required().Int()
@@ -51,22 +53,33 @@ func main() {
 		net = mainNet
 	}
 
+	var provider multisig.BytesProvider
+	if len(*cmdKeysPrivateKey) == 0 {
+		provider = multisig.GeneratedPrivateKeyProvider{}
+	} else {
+		p1 := multisig.PrivateKeyProvider{}
+		p1.Key = *cmdKeysPrivateKey
+		provider = p1
+	}
+
+	keysConfig := multisig.KeysConfig{net, &provider, *cmdKeysCount, *cmdKeysConcise}
+
+
 	switch parse {
+		//keys -- Generate public/private key pairs
+		case cmdKeys.FullCommand():
+			multisig.OutputKeys(keysConfig)
 
-	//keys -- Generate public/private key pairs
-	case cmdKeys.FullCommand():
-		multisig.OutputKeys(*cmdKeysCount, *cmdKeysConcise, net)
+		//address -- Create a multisig P2SH address
+		case cmdAddress.FullCommand():
+			multisig.OutputAddress(*cmdAddressM, *cmdAddressN, *cmdAddressPublicKeys)
 
-	//address -- Create a multisig P2SH address
-	case cmdAddress.FullCommand():
-		multisig.OutputAddress(*cmdAddressM, *cmdAddressN, *cmdAddressPublicKeys)
+		//address -- Fund a P2SH address
+		case cmdFund.FullCommand():
+			multisig.OutputFund(*cmdFundPrivateKey, *cmdFundInputTx, *cmdFundAmount, *cmdFundDestination)
 
-	//address -- Fund a P2SH address
-	case cmdFund.FullCommand():
-		multisig.OutputFund(*cmdFundPrivateKey, *cmdFundInputTx, *cmdFundAmount, *cmdFundDestination)
-
-	//address -- Spend a multisig P2SH address
-	case cmdSpend.FullCommand():
-		multisig.OutputSpend(*cmdSpendPrivateKeys, *cmdSpendDestination, *cmdSpendRedeemScript, *cmdSpendInputTx, *cmdSpendAmount)
+		//address -- Spend a multisig P2SH address
+		case cmdSpend.FullCommand():
+			multisig.OutputSpend(*cmdSpendPrivateKeys, *cmdSpendDestination, *cmdSpendRedeemScript, *cmdSpendInputTx, *cmdSpendAmount)
 	}
 }
