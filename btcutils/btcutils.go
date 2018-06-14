@@ -19,6 +19,14 @@ import (
 	secp256k1 "github.com/toxeus/go-secp256k1"
 )
 
+type NetParams struct {
+	A, B , Name string
+}
+
+
+var MainNet = NetParams{A: "00", B: "80", Name:"MainNet"}
+var TestNet = NetParams{A: "6F", B: "EF", Name:"TestNet"}
+
 // setFixedNonce is used for testing and debugging. It is by default false, but if set to true, then newNonce()
 // will always return a zero-valued [32]byte{}. Allows repeatable ECDSA signatures for testing
 // **Should never be turned on in production. Limit to use in tests only.**

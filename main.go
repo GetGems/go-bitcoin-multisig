@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"gopkg.in/alecthomas/kingpin.v1"
+	"github.com/soroushjp/go-bitcoin-multisig/btcutils"
 )
 
 // Kingpin configurations for command-line subcommands and their respective flags.
@@ -43,14 +44,11 @@ var (
 func main() {
 	parse := kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	mainNet := multisig.NetParams{A: "00", B: "80", Name:"MainNet"}
-	testNet := multisig.NetParams{A: "6F", B: "EF", Name:"TestNet"}
-
-	var net multisig.NetParams
+	var net btcutils.NetParams
 	if *cmdKeysTestNet {
-		net = testNet
+		net = btcutils.TestNet
 	} else {
-		net = mainNet
+		net = btcutils.MainNet
 	}
 
 	var provider multisig.BytesProvider
@@ -63,7 +61,6 @@ func main() {
 	}
 
 	keysConfig := multisig.KeysConfig{net, &provider, *cmdKeysCount, *cmdKeysConcise}
-
 
 	switch parse {
 		//keys -- Generate public/private key pairs

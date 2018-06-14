@@ -10,9 +10,6 @@ import (
 	"log"
 )
 
-type NetParams struct {
-	A, B , Name string
-}
 
 type BytesProvider interface {
 	Provide() []byte
@@ -37,7 +34,7 @@ func (provider PrivateKeyProvider) Provide() []byte  {
 }
 
 type KeysConfig struct {
-	NetParams NetParams
+	NetParams btcutils.NetParams
 	Provider *BytesProvider
 	FlagKeyCount int
 	FlagConcise bool
