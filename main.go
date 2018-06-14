@@ -16,11 +16,13 @@ var (
 	cmdKeys        = app.Command("keys", "Generate public/private key pairs valid for use on Bitcoin network. **PSEUDORANDOM AND FOR DEMONSTRATION PURPOSES ONLY. DO NOT USE IN PRODUCTION.**")
 	cmdKeysCount   = cmdKeys.Flag("count", "No. of key pairs to generate.").Default("1").Int()
 	cmdKeysConcise = cmdKeys.Flag("concise", "Turn on concise output. Default is off (verbose output).").Default("false").Bool()
+	cmdKeysTestNet = cmdKeys.Flag("testnet", "Test net compatibility").Default("false").Bool()
 	//address subcommand
 	cmdAddress           = app.Command("address", "Generate a multisig P2SH address with M-of-N requirements and set of public keys.")
 	cmdAddressM          = cmdAddress.Flag("m", "M, the minimum number of keys needed to spend Bitcoin in M-of-N multisig transaction.").Required().Int()
 	cmdAddressN          = cmdAddress.Flag("n", "N, the total number of possible keys that can be used to spend Bitcoin in M-of-N multisig transaction.").Required().Int()
 	cmdAddressPublicKeys = cmdAddress.Flag("public-keys", "Comma separated list of private keys to sign with. Whitespace is stripped and quotes may be placed around keys. Eg. key1,key2,\"key3\"").PlaceHolder("PUBLIC-KEYS(Comma separated)").Required().String()
+	cmdAddressTestNet 	 = cmdAddress.Flag("testnet", "Test net compatibility").Default("false").Bool()
 	//fund subcommand
 	cmdFund            = app.Command("fund", "Fund multisig address from a standard Bitcoin address.")
 	cmdFundPrivateKey  = cmdFund.Flag("private-key", "Private key of bitcoin to send.").Required().String()
@@ -37,11 +39,23 @@ var (
 )
 
 func main() {
-	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	parse := kingpin.MustParse(app.Parse(os.Args[1:]))
+
+	mainNet := multisig.NetParams{A: "00", B: "80", Name:"MainNet"}
+	testNet := multisig.NetParams{A: "6F", B: "EF", Name:"TestNet"}
+
+	var net multisig.NetParams
+	if *cmdKeysTestNet {
+		net = testNet
+	} else {
+		net = mainNet
+	}
+
+	switch parse {
 
 	//keys -- Generate public/private key pairs
 	case cmdKeys.FullCommand():
-		multisig.OutputKeys(*cmdKeysCount, *cmdKeysConcise)
+		multisig.OutputKeys(*cmdKeysCount, *cmdKeysConcise, net)
 
 	//address -- Create a multisig P2SH address
 	case cmdAddress.FullCommand():

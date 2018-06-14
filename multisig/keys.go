@@ -10,8 +10,12 @@ import (
 	"log"
 )
 
+type NetParams struct {
+	A, B , Name string
+}
+
 //OutputKeys formats and prints relevant outputs to the user.
-func OutputKeys(flagKeyCount int, flagConcise bool) {
+func OutputKeys(flagKeyCount int, flagConcise bool, netParams NetParams) {
 	if flagKeyCount < 1 || flagKeyCount > 100 {
 		log.Fatal("--count <count> must be between 1 and 100")
 	}
@@ -27,17 +31,22 @@ func OutputKeys(flagKeyCount int, flagConcise bool) {
 		fmt.Println("----------------------------------------------------------------------")
 	}
 
-	privateKeyWIFs, publicKeyHexs, publicAddresses := generateKeys(flagKeyCount)
+	privateKeys, privateKeyWIFs, publicKeyHexs, publicAddresses := generateKeys(flagKeyCount, netParams)
 
 	for i := 0; i <= flagKeyCount-1; i++ {
 
 		//Output private key in WIF format, public key as hex and P2PKH public address
 		fmt.Println("-------------------------------------------------------------")
-		fmt.Printf("KEY #%d\n", i+1)
+		fmt.Printf("%s: KEY #%d\n", netParams.Name, i+1)
 		if !flagConcise {
 			fmt.Println("")
 		}
 		fmt.Println("Private key: ")
+		fmt.Println(privateKeys[i])
+		if !flagConcise {
+			fmt.Println("")
+		}
+		fmt.Println("Private key WIF: ")
 		fmt.Println(privateKeyWIFs[i])
 		if !flagConcise {
 			fmt.Println("")
@@ -56,9 +65,10 @@ func OutputKeys(flagKeyCount int, flagConcise bool) {
 // generateKeys is the high-level logic for generating public/private key pairs with the 'go-bitcoin-multisig keys' subcommand.
 // Takes flagCount (desired number of key pairs) and flagConcise (true hides warnings and helpful messages for conciseness)
 // as arguments.
-func generateKeys(flagKeyCount int) ([]string, []string, []string) {
+func generateKeys(flagKeyCount int, netParams NetParams) ([]string, []string, []string, []string) {
 	publicKeyHexs := make([]string, flagKeyCount)
 	publicAddresses := make([]string, flagKeyCount)
+	privateKeys := make([]string, flagKeyCount)
 	privateKeyWIFs := make([]string, flagKeyCount)
 
 	for i := 0; i <= flagKeyCount-1; i++ {
@@ -76,10 +86,11 @@ func generateKeys(flagKeyCount int) ([]string, []string, []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		publicAddresses[i] = base58check.Encode("00", publicKeyHash)
+		publicAddresses[i] = base58check.Encode(netParams.A, publicKeyHash)
 		//Get private key in Wallet Import Format (WIF) by base58 encoding with prefix 80
-		privateKeyWIFs[i] = base58check.Encode("80", privateKey)
+		privateKeyWIFs[i] = base58check.Encode(netParams.B, privateKey)
+		privateKeys[i] = hex.EncodeToString(privateKey)
 	}
 
-	return privateKeyWIFs, publicKeyHexs, publicAddresses
+	return privateKeys, privateKeyWIFs, publicKeyHexs, publicAddresses
 }
