@@ -129,7 +129,7 @@ func TestNewSignature(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(testSignature, signature) {
-		testutils.CompareError(t, "ECDSA signature different from expected signature.", testSignature, signature)
-	}
+
+	testutils.Assert(t, reflect.DeepEqual(testSignature, signature), "ECDSA signature different from expected signature.", testSignature, signature)
+
 }

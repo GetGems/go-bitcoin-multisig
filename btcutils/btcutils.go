@@ -290,21 +290,20 @@ func NewSignature(rawTransaction []byte, privateKey []byte) ([]byte, error) {
 	//Hash the raw transaction twice with SHA256 before the signing
 	shaHash := sha256.New()
 	shaHash.Write(rawTransaction)
-
-	var hash = shaHash.Sum(nil)
+	var hash []byte = shaHash.Sum(nil)
 	shaHash2 := sha256.New()
 	shaHash2.Write(hash)
-	rawTransactionHashed := convertToByte32Slice(shaHash2.Sum(nil))
-
-
+	rawTransactionHashed := shaHash2.Sum(nil)
 	//Sign the raw transaction
 	nonce := newNonce()
-	signedTransaction, success := secp256k1.Sign(rawTransactionHashed, privateKey32, &nonce)
+	slice := convertToByte32Slice(rawTransactionHashed)
+
+	signedTransaction, success := secp256k1.Sign(slice, privateKey32, &nonce)
 	if !success {
 		return nil, errors.New("Failed to sign transaction")
 	}
 	//Verify that it worked.
-	verified := secp256k1.Verify(rawTransactionHashed, signedTransaction, publicKey)
+	verified := secp256k1.Verify(slice, signedTransaction, publicKey)
 	if !verified {
 		return nil, errors.New("Failed to verify signed transaction")
 	}
@@ -316,7 +315,7 @@ func NewSignature(rawTransaction []byte, privateKey []byte) ([]byte, error) {
 func convertToByte32Slice(array []byte) [32]byte {
 	var result = [32]byte{}
 
-	for i := 0; i <= 31; i++ {
+	for i := 0; i < 32; i++ {
 		result[i] = array[i];
 	}
 	return result
